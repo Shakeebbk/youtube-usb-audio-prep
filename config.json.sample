@@ -1,6 +1,5 @@
 {
     "API_KEY": "abc",
     "CHANNEL_ID": "xyz",
-    "STORE_PATH": "music.store",
     "MUSIC_DEST": "/home/abc/Documents/mnt/mount/media/audio/youtube"
 }

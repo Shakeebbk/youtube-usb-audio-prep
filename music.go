@@ -1,16 +1,16 @@
 package main
 
 import (
-        "fmt"
 	"context"
-	"strings"
 	"encoding/json"
-	"os"
+	"fmt"
 	"io/ioutil"
+	"os"
+	"strings"
 
 	"google.golang.org/api/option"
 
-        "google.golang.org/api/youtube/v3"
+	"google.golang.org/api/youtube/v3"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 
 	API_KEY := config["API_KEY"]
 	CHANNEL_ID := config["CHANNEL_ID"]
-	STORE_PATH := config["STORE_PATH"]
+	STORE_PATH := fmt.Sprintf("%v/music.store", config["MUSIC_DEST"])
 
 	ctx := context.Background()
 	youtubeService, err := youtube.NewService(ctx, option.WithAPIKey(API_KEY))
@@ -39,7 +39,7 @@ func main() {
 
 	pl := plService.List("snippet")
 	pl = pl.ChannelId(CHANNEL_ID)
-        // response := playlistsList(youtubeService, "snippet,contentDetails", *channelId, *hl, *maxResults, *mine, *onBehalfOfContentOwner, *pageToken, *playlistId)
+	// response := playlistsList(youtubeService, "snippet,contentDetails", *channelId, *hl, *maxResults, *mine, *onBehalfOfContentOwner, *pageToken, *playlistId)
 	response, err := pl.Do()
 	if err != nil {
 		fmt.Println("Error getting playlists")
@@ -48,11 +48,11 @@ func main() {
 	}
 
 	store := make(map[string]map[string]string)
-        for _, playlist := range response.Items {
-                playlistId := playlist.Id
-                playlistTitle := playlist.Snippet.Title
+	for _, playlist := range response.Items {
+		playlistId := playlist.Id
+		playlistTitle := playlist.Snippet.Title
 
-                // Print the playlist ID and title for the playlist resource.
+		// Print the playlist ID and title for the playlist resource.
 		if strings.HasPrefix(playlistTitle, "music_") {
 			// fmt.Println(playlistId, ": ", playlistTitle)
 			store[playlistTitle] = make(map[string]string)
@@ -80,7 +80,7 @@ func main() {
 				fmt.Printf("Page: %v\n", numPages)
 				for _, item := range itemsResp.Items {
 					// fmt.Println(item.Snippet.Title)
-					store[playlistTitle][item.Snippet.Title] = item.Snippet.ResourceId.VideoId
+					store[playlistTitle][item.Snippet.ResourceId.VideoId] = item.Snippet.Title
 				}
 				numPages -= 1
 				plItems.PageToken(itemsResp.NextPageToken)
@@ -92,8 +92,8 @@ func main() {
 				}
 			}
 		}
-        }
-	jsonStore, _ := json.Marshal(store)
+	}
+	jsonStore, _ := json.MarshalIndent(store, "", "  ")
 	file, err := os.Create(STORE_PATH)
 	file.Write(jsonStore)
 	defer file.Close()
