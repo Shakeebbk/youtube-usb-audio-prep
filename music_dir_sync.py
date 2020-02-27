@@ -3,7 +3,7 @@
 import json
 import os
 import time
-import subprocess
+import glob
 
 with open('config.json') as f:
     raw_config = f.read()
@@ -46,29 +46,14 @@ def get_dir_titles(music_root):
         titles[folder] = [f.replace('.mp3', '').replace('_', '|') for f in files]
     return titles
 
-def get_missing(src, dst):
-    missing = {}
-    for folder, files in src.items():
-        missing[folder] = []
-        if folder not in dst:
-            continue
-        import difflib
-        def check_in(ele, li):
-            for e in li:
-                if difflib.SequenceMatcher(None, e, ele).ratio() > 0.6:
-                    return True
-            return False
-        missing[folder] = [f for f in files if not check_in(f, dst[folder])]
-    return missing
-
 def download_mp3(folder, id):
+    existing_files = glob.glob(f'{MUSIC_DEST}/{folder}/*.mp3')
     cmd = f'youtube-dl -i --extract-audio --audio-format mp3 --audio-quality 0 -o \'{MUSIC_DEST}/{folder}/%(title)s.%(ext)s\' \'https://www.youtube.com/watch?v={id}\' >> {MUSIC_DEST}/youtube_dl.log 2>&1'
     #print(cmd)
     os.system(cmd)
-    cmd = f'ls -ltcr {MUSIC_DEST}/{folder} | grep -e \'.mp3\' | tail -1 | '+'awk \'{print substr($0, index($0,$9))}\''
-    result = subprocess.run(['bash', '-c', cmd], stdout=subprocess.PIPE)
-    name = result.stdout.decode('utf-8').strip('\n')
-    return f'{MUSIC_DEST}/{folder}/{name}'
+    new_files = glob.glob(f'{MUSIC_DEST}/{folder}/*.mp3')
+    added_files = [song for song in new_files if song not in existing_files]
+    return added_files[0]
 
 def run():
     store = {}
