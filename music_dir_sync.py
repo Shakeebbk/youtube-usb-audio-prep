@@ -50,10 +50,13 @@ def download_mp3(folder, id):
     existing_files = glob.glob(f'{MUSIC_DEST}/{folder}/*.mp3')
     cmd = f'youtube-dl -i --extract-audio --audio-format mp3 --audio-quality 0 -o \'{MUSIC_DEST}/{folder}/%(title)s.%(ext)s\' \'https://www.youtube.com/watch?v={id}\' >> {MUSIC_DEST}/youtube_dl.log 2>&1'
     #print(cmd)
-    os.system(cmd)
-    new_files = glob.glob(f'{MUSIC_DEST}/{folder}/*.mp3')
-    added_files = [song for song in new_files if song not in existing_files]
-    return added_files[0]
+    try:
+        os.system(cmd)
+        new_files = glob.glob(f'{MUSIC_DEST}/{folder}/*.mp3')
+        added_files = [song for song in new_files if song not in existing_files]
+        return added_files[0]
+    except:
+        return None
 
 def run():
     store = {}
@@ -79,8 +82,8 @@ def run():
 
     for idx in missing_on_youtube:
         cmd = f'rm -rf \'{dir_store[idx]}\''
-        print(cmd)
-        #os.system(cmd)
+        #print(cmd)
+        os.system(cmd)
 
     missing_local = {}
     for playlist, songs in store.items():
@@ -97,9 +100,11 @@ def run():
         os.system('sync')
         time.sleep(2)
         for song_id, song_name in songs.items():
+            time.sleep(1)
             download_name = download_mp3(folder, song_id)
             print(f'Downloaded: {download_name}')
-            dir_store[song_id] = download_name
+            if download_name:
+                dir_store[song_id] = download_name
 
     with open(DIR_STORE, 'w') as f:
         f.write(json.dumps(dir_store, indent=2))
